@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internet Blackout Simulator</title>
+  <style>
+    /* Base Styles - The illusion of normalcy */
+    :root {
+      --glitch-intensity: 0;
+      --connection-status: 1;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #333;
+      transition: all 0.5s ease;
+    }
+    footer {
+  background-color: #111;
+  color: #ddd;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+  border-top: 1px solid #333;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
+}
+
+footer p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+footer a {
+  color: #ff4d4d;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+footer a:hover {
+  color: #ff7878;
+}
+
+footer .social-icons {
+  margin-top: 1rem;
+}
+
+footer .social-icons a {
+  color: #ddd;
+  margin: 0 1rem;
+  font-size: 1.5rem;
+  transition: color 0.3s ease;
+}
+
+footer .social-icons a:hover {
+  color: #ff4d4d;
+}
+
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 30px;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0066cc;
+    }
+    
+    .search-bar {
+      display: flex;
+      width: 50%;
+    }
+    
+    .search-bar input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px 0 0 4px;
+    }
+    
+    .search-bar button {
+      padding: 10px 15px;
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+    }
+    
+    .widget-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .widget {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .widget-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .weather-card {
+      display: flex;
+      align-items: center;
+    }
+    
+    .weather-icon {
+      font-size: 40px;
+      margin-right: 15px;
+    }
+    
+    .news-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .news-item:last-child {
+      border-bottom: none;
+    }
+    
+    /* Glitch Effects */
+    .glitch-effect {
+      position: relative;
+    }
+    
+    .glitch-effect::before,
+    .glitch-effect::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+    }
+    
+    .glitch-effect::before {
+      color: #f0f;
+      z-index: -1;
+      animation: glitch-anim 1s infinite linear alternate-reverse;
+    }
+    
+    .glitch-effect::after {
+      color: #0ff;
+      z-index: -2;
+      animation: glitch-anim 2s infinite linear alternate-reverse;
+    }
+    
+    @keyframes glitch-anim {
+      0% { transform: translate(0); opacity: 0; }
+      20% { transform: translate(-3px, 3px); opacity: 0.3; }
+      40% { transform: translate(-3px, -3px); opacity: 0.3; }
+      60% { transform: translate(3px, 3px); opacity: 0.3; }
+      80% { transform: translate(3px, -3px); opacity: 0.3; }
+      100% { transform: translate(0); opacity: 0; }
+    }
+    
+    /* Connection Problems */
+    .connection-problem {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: calc(1 - var(--connection-status));
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    
+    .loading-animation {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #0066cc;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Character Dialogs */
+    .character-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      width: 80%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1000;
+      padding: 20px;
+      display: none;
+    }
+    
+    .character-dialog.active {
+      display: block;
+    }
+    
+    .character-dialog .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    .character-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .character-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-right: 20px;
+      object-fit: cover;
+    }
+    
+    .typing-effect {
+      border-right: 2px solid #333;
+      animation: blink-caret 0.75s step-end infinite;
+      white-space: pre-wrap;
+      overflow: hidden;
+    }
+    
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: #333; }
+    }
+    
+    /* Map Visualization */
+    .map-container {
+      width: 100%;
+      height: 500px;
+      background-color: #e9f5ff;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .world-map {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .map-tooltip {
+      position: absolute;
+      background-color: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 10;
+    }
+    
+    .region {
+      fill: #aaccff;
+      stroke: #fff;
+      stroke-width: 0.5;
+      transition: fill 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .region:hover {
+      fill: #5599ff;
+    }
+    
+    /* Funding Minigame */
+    .funding-game {
+      display: none;
+      margin-top: 30px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .token-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    
+    .token {
+      width: 40px;
+      height: 40px;
+      background-color: gold;
+      border-radius: 50%;
+      margin: 0 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
+    }
+    
+    .token:hover {
+      transform: scale(1.1);
+    }
+    
+    .token.used {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .funding-option {
+      display: flex;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .funding-option:hover {
+      background-color: #f0f0f0;
+    }
+    
+    .funding-option.selected {
+      background-color: #e6f2ff;
+      border-left: 4px solid #0066cc;
+    }
+    
+    .funding-icon {
+      font-size: 24px;
+      margin-right: 15px;
+      color: #0066cc;
+    }
+    
+    .funding-details {
+      flex: 1;
+    }
+    
+    .funding-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .outcome-container {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+    }
+    
+    .outcome-character {
+      display: flex;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .outcome-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 15px;
+      object-fit: cover;
+    }
+    
+    /* Console Easter Egg */
+    .console-message {
+      display: none;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .widget-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .search-bar {
+        width: 70%;
+      }
+    }
+
+    /* Base Styles - Dark Mode */
+    body {
+      background-color: #000; /* Black background */
+      color: #fff; /* White text for better contrast */
+    }
+
+    .container {
+      background-color: #000; /* Ensure container matches the body background */
+    }
+
+    header {
+      border-bottom: 1px solid #444; /* Adjust border color for visibility */
+    }
+
+    .logo {
+      color: #fff; /* White logo text */
+    }
+
+    .search-bar input {
+      background-color: #222; /* Dark input background */
+      color: #fff; /* White text */
+      border: 1px solid #444; /* Adjust border color */
+    }
+
+    .search-bar button {
+      background-color: #444; /* Dark button background */
+      color: #fff; /* White text */
+    }
+
+    .widget {
+      background-color: #111; /* Dark widget background */
+      color: #fff; /* White text */
+    }
+
+    .widget-header {
+      color: #fff; /* White header text */
+    }
+
+    .news-item {
+      border-bottom: 1px solid #444; /* Adjust border color */
+    }
+
+    .funding-game {
+      background-color: #111; /* Dark background for funding game */
+      color: #fff; /* White text */
+    }
+
+    .funding-option {
+      background-color: #222; /* Dark background for options */
+      color: #fff; /* White text */
+    }
+
+    .funding-option:hover {
+      background-color: #333; /* Slightly lighter hover effect */
+    }
+
+    .funding-option.selected {
+      background-color: #444; /* Highlight selected option */
+    }
+
+    .outcome-container {
+      background-color: #111; /* Dark background for outcomes */
+      color: #fff; /* White text */
+    }
+
+    .character-dialog {
+      background-color: #111; /* Dark background for dialogs */
+      color: #fff; /* White text */
+    }
+
+    .character-dialog .close-btn {
+      color: #fff; /* White close button */
+    }
+
+    .map-container {
+      background-color: #000; /* Dark background for map */
+    }
+
+    .map-tooltip {
+      background-color: #222; /* Dark tooltip background */
+      color: #fff; /* White text */
+    }
+
+    .region {
+      fill: #444; /* Darker fill for regions */
+    }
+
+    .region:hover {
+      fill: #666; /* Slightly lighter hover effect */
+    }
+
+    .token {
+      background-color: #444; /* Dark token background */
+      color: #fff; /* White text */
+    }
+
+    .token.used {
+      background-color: #222; /* Darker background for used tokens */
+    }
+
+    .connection-problem {
+      background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+      color: #fff; /* White text */
+    }
+
+    .loading-animation {
+      border: 5px solid #333; /* Dark spinner border */
+      border-top: 5px solid #fff; /* White spinner highlight */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo glitch-effect" data-text="NetLife">NetLife</div>
+      <div class="search-bar">
+        <input type="text" placeholder="Search the web...">
+        <button>Search</button>
+      </div>
+      <div class="user-menu">☰</div>
+    </header>
+    
+    <div class="widget-grid">
+      <div class="widget" id="weather-widget">
+        <div class="widget-header">Weather</div>
+        <div class="weather-card">
+          <div class="weather-icon">☀️</div>
+          <div>
+            <div>Sunny</div>
+            <div>72°F / 22°C</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="widget" id="news-widget">
+        <div class="widget-header">Top News</div>
+        <div class="news-item">
+          <div>Global summit addresses climate change</div>
+          <div class="news-source">World News Network</div>
+        </div>
+        <div class="news-item">
+          <div>Tech company announces breakthrough in renewable energy</div>
+          <div class="news-source">Tech Today</div>
+        </div>
+      </div>
+      
+      <div class="widget" id="social-widget">
+        <div class="widget-header">Social Updates</div>
+        <div class="news-item">
+          <div>Your friend shared a memory</div>
+          <div class="news-source">1 hour ago</div>
+        </div>
+        <div class="news-item">
+          <div>3 new notifications</div>
+          <div class="news-source">SocialApp</div>
+        </div>
+      </div>
+      
+      <div class="widget" id="email-widget">
+        <div class="widget-header">Email</div>
+        <div class="news-item">
+          <div>New message: Project Update</div>
+          <div class="news-source">From: John Smith</div>
+        </div>
+      </div>
+      
+      <div class="widget" id="calendar-widget">
+        <div class="widget-header">Calendar</div>
+        <div>Meeting at 2:00 PM</div>
+      </div>
+      
+      <div class="widget" id="entertainment-widget">
+        <div class="widget-header">Entertainment</div>
+        <div>New episode available</div>
+      </div>
+    </div>
+    
+    <div class="connection-problem">
+      <div class="loading-animation"></div>
+      <div>Attempting to reconnect...</div>
+      <div class="error-message">No internet connection</div>
+    </div>
+  </div>
+  
+  <!-- Character Dialogs -->
+  <div class="character-dialog" id="student-dialog">
+    <button class="close-btn">×</button>
+    <div class="character-header">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM2NmNjZmYiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIyMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCA3MGg0MHYxMEgzMHoiIGZpbGw9IiMzMzMiLz48L3N2Zz4=" class="character-avatar">
+      <div>
+        <h2>Maria, 14</h2>
+        <div>Student in rural Colombia</div>
+      </div>
+    </div>
+    <div class="typing-effect" id="student-text"></div>
+  </div>
+  
+  <div class="character-dialog" id="farmer-dialog">
+    <button class="close-btn">×</button>
+    <div class="character-header">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiM5OWZmOTkiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIyMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCA3MGg0MHYxMEgzMHoiIGZpbGw9IiMzMzMiLz48cGF0aCBkPSJNMjAgNDVoMTB2MjBIMjB6bTUwIDBoMTB2MjBINzB6IiBmaWxsPSIjY2NjIi8+PC9zdmc+" class="character-avatar">
+      <div>
+        <h2>Kwame, 42</h2>
+        <div>Farmer in Ghana</div>
+      </div>
+    </div>
+    <div class="typing-effect" id="farmer-text"></div>
+  </div>
+  
+  <div class="character-dialog" id="nurse-dialog">
+    <button class="close-btn">×</button>
+    <div class="character-header">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmZmNjY2MiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIyMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCA3MGg0MHYxMEgzMHoiIGZpbGw9IiMzMzMiLz48cGF0aCBkPSJNNTUgNDVoMTB2MTBINTV6IiBmaWxsPSIjZmZmIi8+PC9zdmc+" class="character-avatar">
+      <div>
+        <h2>Dr. Amina, 35</h2>
+        <div>Doctor in Yemen</div>
+      </div>
+    </div>
+    <div class="typing-effect" id="nurse-text"></div>
+  </div>
+  
+  <div class="character-dialog" id="refugee-dialog">
+    <button class="close-btn">×</button>
+    <div class="character-header">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNjY2NjY2MiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIyMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCA3MGg0MHYxMEgzMHoiIGZpbGw9IiMzMzMiLz48L3N2Zz4=" class="character-avatar">
+      <div>
+        <h2>Rana, 28</h2>
+        <div>Refugee from Syria</div>
+      </div>
+    </div>
+    <div class="typing-effect" id="refugee-text"></div>
+  </div>
+  
+  <!-- Map Visualization -->
+  <div class="container">
+    <div class="map-container" id="map-container">
+      <svg class="world-map" viewBox="0 0 1000 500" id="world-map">
+        <!-- World map regions will be added by JavaScript -->
+      </svg>
+      <div class="map-tooltip" id="map-tooltip"></div>
+    </div>
+  </div>
+  
+  <!-- Funding Minigame -->
+  <div class="container">
+    <div class="funding-game" id="funding-game">
+      <h2>Make a Difference</h2>
+      <p>You have 3 tokens to invest in improving global internet access. Choose wisely:</p>
+      
+      <div class="token-container" id="token-container">
+        <div class="token">1</div>
+        <div class="token">2</div>
+        <div class="token">3</div>
+      </div>
+      
+      <div class="funding-option" data-option="education">
+        <div class="funding-icon">📚</div>
+        <div class="funding-details">
+          <div class="funding-title">Digital Schools Initiative</div>
+          <div>Provide internet-enabled devices and training to schools in underserved areas</div>
+        </div>
+      </div>
+      
+      <div class="funding-option" data-option="infrastructure">
+        <div class="funding-icon">🛰️</div>
+        <div class="funding-details">
+          <div class="funding-title">Rural Connectivity Project</div>
+          <div>Build infrastructure for reliable internet in remote regions</div>
+        </div>
+      </div>
+      
+      <div class="funding-option" data-option="health">
+        <div class="funding-icon">🏥</div>
+        <div class="funding-details">
+          <div class="funding-title">Telemedicine Expansion</div>
+          <div>Connect clinics to medical databases and remote specialists</div>
+        </div>
+      </div>
+      
+      <div class="outcome-container" id="outcome-container">
+        <h3>Your Impact</h3>
+        <div id="outcome-results"></div>
+      </div>
+    </div>
+  </div>
+  <footer>Internet Blackout Simulator is meant to raise awareness about digital inequality by immersing users in the experience of losing internet access and highlighting its impact on education, healthcare, and daily life.</footer>
+  
+  <!-- Console Easter Egg -->
+  <div class="console-message">
+    // Want to learn more about digital inequality?
+    // Check out these organizations:
+    // - Internet Society (https://www.internetsociety.org)
+    // - Alliance for Affordable Internet (https://a4ai.org)
+    // - Digital Divide Institute (https://digitaldivide.org)
+    // 
+    // "Access to the internet is a basic human right" - UN Resolution, 2016
+  </div>
+
+  <script>
+    // Digital inequality data
+    const connectivityData = {
+      "Africa": { connected: 39.3, impacts: ["education", "health", "commerce"] },
+      "Asia": { connected: 53.6, impacts: ["education", "government"] },
+      "Europe": { connected: 87.2, impacts: ["minor", "rural"] },
+      "North America": { connected: 89.4, impacts: ["rural", "indigenous"] },
+      "South America": { connected: 71.5, impacts: ["rural", "education"] },
+      "Oceania": { connected: 68.5, impacts: ["remote", "islands"] }
+    };
+    
+    const characterStories = {
+      student: "Every time the internet goes out, I miss another online class. My school doesn't have books for all subjects, so when the connection fails, we just sit waiting. Last month, I failed my math test because I couldn't access the practice materials. My teacher says I might have to repeat the year if this continues. I just want to learn.",
+      farmer: "Without weather forecasts, I'm farming blind. Last season, I planted right before unexpected heavy rains. The seeds washed away. My neighbor with a smartphone got the alert in time. Now my family will struggle to eat this winter. Information shouldn't be a luxury.",
+      nurse: "Yesterday, a child came in with strange symptoms. Our medical books didn't help. I remembered reading about a similar case online last year, but with no internet, I couldn't search. We had to guess the treatment. The internet isn't just convenience—it's life or death.",
+      refugee: "I fled with just my phone. It was my lifeline—maps, translation, news from home. Then the battery died. No internet cafes here. I'm lost in a new country with no way to contact my family or find help. Isolation is worse than hunger."
+    };
+    
+    const fundingOutcomes = {
+      education: {
+        student: "Maria now has reliable internet at her school. She's catching up on missed lessons and her grades are improving.",
+        farmer: "Kwame's children can now do homework online, but his farm still struggles without weather data.",
+        nurse: "Dr. Amina's clinic remains disconnected from medical resources.",
+        refugee: "Rana still lacks access to vital information."
+      },
+      infrastructure: {
+        student: "Maria's village got new internet towers. Her whole community now has access.",
+        farmer: "Kwame can check weather forecasts daily. His crop yields have increased by 30%.",
+        nurse: "Dr. Amina's clinic has spotty connection but still struggles with bandwidth.",
+        refugee: "Rana found an internet cafe in her new city but can't afford regular access."
+      },
+      health: {
+        student: "Maria's school remains disconnected.",
+        farmer: "Kwame still can't get weather data.",
+        nurse: "Dr. Amina's clinic now has reliable medical databases. She's saved 12 lives this month with proper diagnoses.",
+        refugee: "Rana found a health clinic with internet access and got news about her missing sister."
+      }
+    };
+    
+    // Game state
+    let glitchLevel = 0;
+    let connectionStability = 100;
+    let discoveredCharacters = 0;
+    let tokensAvailable = 3;
+    let selectedOptions = [];
+    
+    // DOM elements
+    const searchInput = document.querySelector('.search-bar input');
+    const searchButton = document.querySelector('.search-bar button');
+    const weatherWidget = document.getElementById('weather-widget');
+    const newsWidget = document.getElementById('news-widget');
+    const socialWidget = document.getElementById('social-widget');
+    const emailWidget = document.getElementById('email-widget');
+    const calendarWidget = document.getElementById('calendar-widget');
+    const entertainmentWidget = document.getElementById('entertainment-widget');
+    const connectionProblem = document.querySelector('.connection-problem');
+    const root = document.documentElement;
+    
+    // Initialize the experience
+    function init() {
+      // Start with normal page
+      setTimeout(startGlitches, 5000);
+      
+      // Set up character dialogs
+      setupDialogs();
+      
+      // Set up map
+      setupMap();
+      
+      // Set up funding game
+      setupFundingGame();
+      
+      // Console message
+      console.log('%cWelcome to the Internet Blackout Simulator', 'color: #0066cc; font-size: 16px;');
+      console.log('%cDid you know 3.7 billion people still lack internet access?', 'color: #cc0000;');
+      console.log('%cView source for hidden messages', 'font-style: italic;');
+      
+      // Easter egg in HTML comments
+      document.querySelector('.console-message').style.display = 'none';
+    }
+    
+    // Gradually introduce glitches and connection problems
+    function startGlitches() {
+      // Initial minor glitches
+      root.style.setProperty('--glitch-intensity', '0.3');
+      
+      // First connection drop
+      setTimeout(() => {
+        dropConnection(30);
+        showCharacterDialog('student');
+      }, 8000);
+      
+      // Progressive worsening
+      const glitchInterval = setInterval(() => {
+        glitchLevel += 0.1;
+        root.style.setProperty('--glitch-intensity', glitchLevel);
+        
+        if (glitchLevel >= 1) {
+          clearInterval(glitchInterval);
+          completeBlackout();
+        }
+      }, 10000);
+      
+      // Random connection drops
+      setInterval(() => {
+        if (Math.random() < glitchLevel/3) {
+          dropConnection(10 + Math.random() * 30);
+        }
+      }, 5000);
+    }
+    
+    // Simulate connection drop
+    function dropConnection(durationSeconds) {
+      connectionStability = 0;
+      root.style.setProperty('--connection-status', '0');
+      
+      setTimeout(() => {
+        connectionStability = 100;
+        root.style.setProperty('--connection-status', '1');
+      }, durationSeconds * 1000);
+    }
+    
+    // Complete blackout - all services down
+    function completeBlackout() {
+      root.style.setProperty('--connection-status', '0');
+      
+      // Show all character dialogs one by one
+      const characters = ['farmer', 'nurse', 'refugee'];
+      let delay = 5000;
+      
+      characters.forEach(char => {
+        setTimeout(() => {
+          showCharacterDialog(char);
+        }, delay);
+        delay += 8000;
+      });
+      
+      // Finally show the map
+      setTimeout(showMap, delay + 5000);
+    }
+    
+    // Set up character dialogs
+    function setupDialogs() {
+      // Close buttons
+      document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          this.closest('.character-dialog').classList.remove('active');
+          discoveredCharacters++;
+          
+          if (discoveredCharacters >= 4) {
+            setTimeout(showFundingGame, 3000);
+          }
+        });
+      });
+      
+      // Typing effects
+      typeText('student-text', characterStories.student);
+      typeText('farmer-text', characterStories.farmer);
+      typeText('nurse-text', characterStories.nurse);
+      typeText('refugee-text', characterStories.refugee);
+    }
+    
+    // Show character dialog
+    function showCharacterDialog(character) {
+      const dialog = document.getElementById(`${character}-dialog`);
+      dialog.classList.add('active');
+    }
+    
+    // Typewriter effect
+    function typeText(elementId, text) {
+      const element = document.getElementById(elementId);
+      let i = 0;
+      element.textContent = '';
+      
+      function type() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(type, Math.random() * 50 + 20);
+        }
+      }
+      
+      type();
+    }
+    
+    // Set up world map
+    function setupMap() {
+      const map = document.getElementById('world-map');
+      const tooltip = document.getElementById('map-tooltip');
+      
+      // Simplified world map regions
+      const regions = [
+        { id: 'africa', name: 'Africa', path: 'M500,350 L520,340 L530,360 L510,370 Z' },
+        { id: 'asia', name: 'Asia', path: 'M600,300 L650,310 L660,350 L620,360 L600,330 Z' },
+        { id: 'europe', name: 'Europe', path: 'M550,250 L570,260 L580,280 L560,290 Z' },
+        { id: 'north-america', name: 'North America', path: 'M200,250 L250,270 L240,320 L210,330 L190,300 Z' },
+        { id: 'south-america', name: 'South America', path: 'M250,370 L280,380 L270,420 L240,410 Z' },
+        { id: 'oceania', name: 'Oceania', path: 'M700,400 L720,410 L710,430 L690,420 Z' }
+      ];
+      
+      // Add regions to map
+      regions.forEach(region => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', region.path);
+        path.setAttribute('class', 'region');
+        path.setAttribute('id', region.id);
+        path.setAttribute('data-name', region.name);
+        map.appendChild(path);
+        
+        // Tooltip interaction
+        path.addEventListener('mouseover', (e) => {
+          const data = connectivityData[region.name];
+          tooltip.innerHTML = `
+            <strong>${region.name}</strong><br>
+            Connected: ${data.connected}%<br>
+            Impacts: ${data.impacts.join(', ')}
+          `;
+          tooltip.style.left = `${e.pageX + 10}px`;
+          tooltip.style.top = `${e.pageY + 10}px`;
+          tooltip.style.opacity = '1';
+        });
+        
+        path.addEventListener('mouseout', () => {
+          tooltip.style.opacity = '0';
+        });
+      });
+    }
+    
+    // Show the connectivity map
+    function showMap() {
+      document.getElementById('map-container').style.display = 'block';
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+    
+    // Set up funding minigame
+    function setupFundingGame() {
+      const options = document.querySelectorAll('.funding-option');
+      const tokens = document.querySelectorAll('.token');
+      
+      options.forEach(option => {
+        option.addEventListener('click', function() {
+          if (tokensAvailable > 0 && !this.classList.contains('selected')) {
+            this.classList.add('selected');
+            selectedOptions.push(this.dataset.option);
+            tokens[tokensAvailable - 1].classList.add('used');
+            tokensAvailable--;
+            
+            if (tokensAvailable === 0) {
+              showFundingOutcomes();
+            }
+          }
+        });
+      });
+    }
+    
+    // Show funding game
+    function showFundingGame() {
+      document.getElementById('funding-game').style.display = 'block';
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+    
+    // Show funding outcomes
+    function showFundingOutcomes() {
+      const outcomeContainer = document.getElementById('outcome-container');
+      const outcomeResults = document.getElementById('outcome-results');
+      
+      outcomeResults.innerHTML = '';
+      
+      // Show outcomes for each character
+      for (const [character, story] of Object.entries(characterStories)) {
+        const outcomeDiv = document.createElement('div');
+        outcomeDiv.className = 'outcome-character';
+        
+        outcomeDiv.innerHTML = `
+          <img src="${document.getElementById(`${character}-dialog`).querySelector('.character-avatar').src}" class="outcome-avatar">
+          <div>
+            <strong>${document.getElementById(`${character}-dialog`).querySelector('h2').textContent}</strong>
+            <div>${getCharacterOutcome(character)}</div>
+          </div>
+        `;
+        
+        outcomeResults.appendChild(outcomeDiv);
+      }
+      
+      outcomeContainer.style.display = 'block';
+    }
+    
+    // Get outcome for a character based on selected options
+    function getCharacterOutcome(character) {
+      // Simple logic - just use the first selected option that affects this character
+      for (const option of selectedOptions) {
+        if (fundingOutcomes[option][character]) {
+          return fundingOutcomes[option][character];
+        }
+      }
+      
+      return "No significant change in situation.";
+    }
+    
+    // Initialize when DOM loads
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
